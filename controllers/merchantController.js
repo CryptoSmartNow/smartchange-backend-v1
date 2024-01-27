@@ -293,7 +293,7 @@ const setActiveStatus = async (request, response)=>{
 
 
 
-const addBuyingCurrency = async (request, response) =>{
+const addBuyingRate = async (request, response) =>{
 
     const id = request.merchant;
 
@@ -321,10 +321,60 @@ const addBuyingCurrency = async (request, response) =>{
     await merchant.save();
 
 
+    response.status(200).json({status:true, message:"Buying Rate Added"});
+
+    }catch(error){
+        console.log(error);
+        response.status(500).json(internalServerError(error));
+    }
+}
+
+
+const addSellingRate = async (request, response) =>{
+
+    const id = request.merchant;
+
+    const {currency, rate} = request.body;
+
+
+    try{
+
+    //check if the required fields are being sent
+
+    if(!currency){
+        return response.status(400).json(handleError(400, "Currency is Required", "the client did not send 'currency' in the request body"));
+    }
+
+    if(!rate){
+        return response.status(400).json(handleError(400, "Rate is Required", "the client did not send 'rate' in the request body"))
+    }
+
+    //find the logged in user and add to his rates
+
+    const merchant = await Merchant.findById(id);
+
+    merchant.rates.selling.push({currency,rate});
+
+    await merchant.save();
+
+    response.status(200).json({status:true, message:"Selling Rate Added"});
 
 
     }catch(error){
         console.log(error);
         response.status(500).json(internalServerError(error));
     }
+}
+
+
+module.exports = {
+    signUpMerchant,
+    loginMerchant,
+    setUpMerchantProfile,
+    uploadMerchantDocument,
+    addAccountDetails,
+    setQuickResponse,
+    setActiveStatus,
+    addBuyingRate,
+    addSellingRate
 }

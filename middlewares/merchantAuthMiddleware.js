@@ -2,10 +2,10 @@ const jwt = require("jsonwebtoken")
 require("dotenv").config()
 const jwtsecret = process.env.JWT_SECRET
 const {handleError} = require("../utils/errorHandler");
-const User = require("../models/userModel");
+const Merchant = require("../models/merchantModel");
 
 
-const authenticateUser = async (request, response, next) => {
+const authenticateMerchant = async (request, response, next) => {
     
     if (request.headers.authorization && request.headers.authorization.startsWith("Bearer")) {
         
@@ -14,24 +14,22 @@ const authenticateUser = async (request, response, next) => {
         try {
             
             const decoded = jwt.verify(token, jwtsecret)
-            request.user = decoded.id
+            request.merchant = decoded.id
 
-            const user = await User.findById(decoded.id);
-            console.log(user)
+            const merchant = await Merchant.findById(decoded.id);
 
-            if(!user){
+            if(!merchant){
                return response.status(401).json(handleError(401, "Unauthorized", "The Client is Trying to Access an Authorized Endpoint with an Invalid Token"))
             }
 
-            if(user.blocked){
-                return response.status(401).json(handleError(401, "Unauthorized", "the user is blocked and can not access this endpoint"))
+            if(merchant.blocked){
+                return response.status(401).json(handleError(401, "Unauthorized", "the merchant is blocked and can not access this endpoint"))
             }
 
-            if(!user.logged){
+            if(!merchant.logged){
                return response.status(401).json(handleError(401, "Unauthorized", "You are not Logged in, please Login and try again"))
             }
 
-            //Check if User is Blocked
 
             next()
         } catch (error) {
@@ -47,4 +45,4 @@ const authenticateUser = async (request, response, next) => {
 
 }
 
-module.exports = authenticateUser;
+module.exports = authenticateMerchant;
