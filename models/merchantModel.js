@@ -65,6 +65,7 @@ const merchantSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    messaging_token: String
   },
   { timestamps: true }
 );
