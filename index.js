@@ -21,6 +21,7 @@ mongoose
 const userAuthRoutes = require("./routes/userAuth.router");
 const merchantAuthRoutes = require("./routes/merchantAuth.router");
 const merchantProfileRoutes = require("./routes/merchantProfile.router");
+const chatRoutes = require("./routes/chat.router");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -28,6 +29,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/v1/auth/user", userAuthRoutes);
 app.use("/api/v1/auth/merchant", merchantAuthRoutes);
 app.use("/api/v1/profile/merchant", merchantProfileRoutes);
+app.use("/api/v1/chat", chatRoutes);
 
 // Messaging Related Models
 const User = require("./models/userModel");
@@ -111,8 +113,8 @@ io.on("connection", (socket) => {
         chat: chat._id,
         message: message,
         receiverHash,
-        senderModel:role,
-        receiverModel: role === "user" ? "merchant" : "user"
+        senderModel: role,
+        receiverModel: role === "user" ? "merchant" : "user",
       });
 
       // Update the last message in the chat
