@@ -9,12 +9,20 @@ const ratingSchema = new Schema(
     },
     userToRate: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "user",
+      ref: "merchant",
     },
     stars: {
       type: Number,
       default: 1,
       enum: [1, 2, 3, 4, 5],
+    },
+    message: {
+      type: String,
+      required: true,
+    },
+    flagged: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }
