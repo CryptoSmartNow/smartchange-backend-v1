@@ -398,7 +398,7 @@ const setActiveStatus = async (request, response) => {
 
     // find the logged in user and update active status
 
-    await Merchant.findOneAndUpdate({ _id: id, active: status });
+    await Merchant.findOneAndUpdate({ _id: id }, { active: status });
 
     response
       .status(200)
@@ -503,17 +503,10 @@ const addSellingRate = async (request, response) => {
   }
 };
 
-const getMerchantProfile = async(request, response)=>{
-  try{
-
-
-
-
-
-  }catch(error){
-    
-  }
-}
+const getMerchantProfile = async (request, response) => {
+  try {
+  } catch (error) {}
+};
 module.exports = {
   signUpMerchant,
   loginMerchant,
