@@ -1,3 +1,4 @@
+const { default: mongoose } = require("mongoose");
 const Merchant = require("../models/merchantModel");
 const { internalServerError, handleError } = require("../utils/errorHandler");
 
@@ -45,7 +46,7 @@ const getMerchantProfile = async (request, response) => {
         );
     }
 
-    const merchant = await Merchant.findById(merchantId, { passwordHash: 0 });
+    const merchant = await Merchant.findById(merchantId);
 
     if (!merchant) {
       return response

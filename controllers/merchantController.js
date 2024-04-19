@@ -503,6 +503,17 @@ const addSellingRate = async (request, response) => {
   }
 };
 
+const getMerchantProfile = async(request, response)=>{
+  try{
+
+
+
+
+
+  }catch(error){
+    
+  }
+}
 module.exports = {
   signUpMerchant,
   loginMerchant,
