@@ -118,7 +118,7 @@ const loginAdmin = async (request, response) => {
 
     //generate a token for the admin to authenticate requests
 
-    const token = jwt.sign({ id: admin._id, role: "admin" }, jwtsecret);
+    const token = jwt.sign({ id: admin._id, role: admin.role }, jwtsecret);
 
     response
       .status(200)
@@ -129,7 +129,69 @@ const loginAdmin = async (request, response) => {
   }
 };
 
+const createAdmin = async (request, response) => {
+  const { fullName, email, password } = request.body;
+
+  try {
+    //Check if the required fields are being sent by the client
+
+    if (!fullName || !email || !password) {
+      return response
+        .status(400)
+        .json(
+          handleError(
+            400,
+            "All Fields are Required",
+            "fullName, email and password, are required in the request body"
+          )
+        );
+    }
+
+    //Check if there is already an admin
+
+    const adminExists = await Admin.findOne({ email: email.toLowerCase() });
+
+    if (adminExists) {
+      response
+        .status(401)
+        .json(
+          handleError(
+            401,
+            "Email already exists",
+            "this email is already associated with anotber admin"
+          )
+        );
+    }
+
+    //hash the admins password
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    //finally create the admin
+
+    const admin = await Admin.create({
+      fullName,
+      email: email.toLowerCase(),
+      password: passwordHash,
+    });
+
+    //sign a jwt token for the admin, so the admin can be logged in immediately after the signup process
+
+    const token = jwt.sign({ id: admin._id, role: "moderator" }, jwtsecret);
+
+    response.status(201).json({
+      status: true,
+      message: "Admin Created Successfully",
+      token,
+    });
+  } catch (error) {
+    console.log(error);
+    response.status(400).json(internalServerError(error));
+  }
+};
+
 module.exports = {
   registerAdmin,
   loginAdmin,
+  createAdmin
 };

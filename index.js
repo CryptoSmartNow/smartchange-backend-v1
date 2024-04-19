@@ -24,6 +24,9 @@ const merchantProfileRoutes = require("./routes/merchantProfile.router");
 const chatRoutes = require("./routes/chat.router");
 const appRoutes = require("./routes/app.router");
 const reviewRoutes = require("./routes/review.router");
+const adminAuthRoutes = require("./routes/adminRoutes/adminAuthRoutes");
+const adminUserManagementRoutes = require("./routes/adminRoutes/usersRouter");
+const adminMerchantRoutes = require("./routes/adminRoutes/merchantsRoutes");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -34,6 +37,9 @@ app.use("/api/v1/profile/merchant", merchantProfileRoutes);
 app.use("/api/v1/chat", chatRoutes);
 app.use("/api/v1/app", appRoutes);
 app.use("/api/v1/review", reviewRoutes);
+app.use("/api/v1/admin/auth", adminAuthRoutes);
+app.use("/api/v1/admin/user_management", adminUserManagementRoutes);
+app.use("/api/v1/admin/merchant_management", adminMerchantRoutes);
 
 // Messaging Related Models
 const User = require("./models/userModel");
