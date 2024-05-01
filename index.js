@@ -8,8 +8,13 @@ const { Server } = require("socket.io");
 const { createServer } = require("http");
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
+  pingInterval: 10000,
+  pingTimeout: 5000,
+  cookie: false,
+  transports: ["websocket", "polling"],
   cors: {
-    origin: "",
+    origin: "*",
+    methods: ["GET", "POST"],
   },
 });
 
@@ -28,8 +33,11 @@ const adminAuthRoutes = require("./routes/adminRoutes/adminAuthRoutes");
 const adminUserManagementRoutes = require("./routes/adminRoutes/usersRouter");
 const adminMerchantRoutes = require("./routes/adminRoutes/merchantsRoutes");
 
+const authenticateSocket = require("./middlewares/authenticateSocket");
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+io.use(authenticateSocket);
 
 app.use("/api/v1/auth/user", userAuthRoutes);
 app.use("/api/v1/auth/merchant", merchantAuthRoutes);
