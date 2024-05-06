@@ -39,7 +39,7 @@ const authenticateSocket = require("./middlewares/authenticateSocket");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors())
-io.use(authenticateSocket);
+// io.use(authenticateSocket);
 
 app.use("/api/v1/auth/user", userAuthRoutes);
 app.use("/api/v1/auth/merchant", merchantAuthRoutes);
