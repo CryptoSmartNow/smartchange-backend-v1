@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
+const cors = require("cors")
 require("dotenv").config();
 const uri = process.env.MONGO_URI;
 const port = process.env.PORT || 3000;
@@ -37,6 +38,7 @@ const authenticateSocket = require("./middlewares/authenticateSocket");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors())
 io.use(authenticateSocket);
 
 app.use("/api/v1/auth/user", userAuthRoutes);
