@@ -63,8 +63,8 @@ const authenticateChat = require("./middlewares/authenticateChat");
 const userSocketMap = new Map();
 
 io.on("connection", (socket) => {
-  socket.on("authenticateUser", async (token) => {
-    const id = await authenticateChat(token);
+  socket.on("authenticateUser", async (data) => {
+    const id = await authenticateChat(data.token,data.role);
 
     if (!id) {
       return socket.emit("socketError", {
