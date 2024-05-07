@@ -78,7 +78,7 @@ const getMessages = async (request, response) => {
 
     const messages = await Message.find({ chat: chatId }).populate(
       "sender receiver",
-      "profilePicture"
+      "profilePicture messaging_token"
     );
 
     response.status(200).json({ status: true, messages });

@@ -36,6 +36,7 @@ const adminMerchantRoutes = require("./routes/adminRoutes/merchantsRoutes");
 
 const authenticateSocket = require("./middlewares/authenticateSocket");
 
+app.use(express.static("public"))
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors())
@@ -163,7 +164,7 @@ io.on("connection", (socket) => {
         receivingSocket.emit("newMessage", messageData);
       }
 
-      receivingSocket.emit("newMessage", messageData);
+      // receivingSocket.emit("newMessage", messageData);
 
       if (userSocketMap.get(receiver._id.toString() + ":2")) {
         userSocketMap
@@ -181,6 +182,138 @@ io.on("connection", (socket) => {
           .emit("newMessage", messageData);
       } else if (sendingSocket !== socket) {
         sendingSocket.emit("newMessage", messageData);
+      }
+    } catch (error) {
+      // Emit error message if any error occurs
+      socket.emit("messageError", { message: error.message });
+    }
+  });
+
+
+  socket.on("typing", async (data) => {
+    const { senderHash, receiverHash, role} = data;
+    let sendingSocket, receivingSocket;
+
+    try {
+      // Find the sender and receiver based on the role
+      const sender =
+        role === "user"
+          ? await User.findOne({ messaging_token: senderHash })
+          : await Merchant.findOne({ messaging_token: senderHash });
+      const receiver =
+        role === "user"
+          ? await Merchant.findOne({ messaging_token: receiverHash })
+          : await User.findOne({ messaging_token: receiverHash });
+
+      // Throw error if sender or receiver is not found
+      if (!sender || !receiver) {
+        throw new Error("Invalid sender or receiver hash");
+      }
+
+      // Get the sender's and receiver's sockets
+      sendingSocket = userSocketMap.get(sender._id.toString());
+      receivingSocket =
+        userSocketMap.get(receiver._id.toString()) ||
+        userSocketMap.get(receiver._id.toString() + ":2");
+
+      // Throw error if sender's  socket is not found
+      if (!sendingSocket) {
+        throw new Error("Unable to send message: socket not found");
+      }
+
+      // Data to be emitted to sender and receiver
+      const messageData = {
+        senderHash,
+        receiverHash,
+      };
+
+      // Emit the message to the receiver's socket
+
+      if (receivingSocket) {
+        receivingSocket.emit("typing", messageData);
+      }
+
+      if (userSocketMap.get(receiver._id.toString() + ":2")) {
+        userSocketMap
+          .get(receiver._id.toString() + ":2")
+          .emit("typing", messageData);
+      }
+
+      // Emit the message to the sender's other device if exists
+      if (
+        userSocketMap.get(sender._id.toString() + ":2") &&
+        socket !== userSocketMap.get(sender._id.toString() + ":2")
+      ) {
+        userSocketMap
+          .get(sender._id.toString() + ":2")
+          .emit("typing", messageData);
+      } else if (sendingSocket !== socket) {
+        sendingSocket.emit("typing", messageData);
+      }
+    } catch (error) {
+      // Emit error message if any error occurs
+      socket.emit("messageError", { message: error.message });
+    }
+  });
+  socket.on("stoppedTyping", async (data) => {
+    const { senderHash, receiverHash, role} = data;
+    let sendingSocket, receivingSocket;
+
+    try {
+      // Find the sender and receiver based on the role
+      const sender =
+        role === "user"
+          ? await User.findOne({ messaging_token: senderHash })
+          : await Merchant.findOne({ messaging_token: senderHash });
+      const receiver =
+        role === "user"
+          ? await Merchant.findOne({ messaging_token: receiverHash })
+          : await User.findOne({ messaging_token: receiverHash });
+
+      // Throw error if sender or receiver is not found
+      if (!sender || !receiver) {
+        throw new Error("Invalid sender or receiver hash");
+      }
+
+      // Get the sender's and receiver's sockets
+      sendingSocket = userSocketMap.get(sender._id.toString());
+      receivingSocket =
+        userSocketMap.get(receiver._id.toString()) ||
+        userSocketMap.get(receiver._id.toString() + ":2");
+
+      // Throw error if sender's  socket is not found
+      if (!sendingSocket) {
+        throw new Error("Unable to send message: socket not found");
+      }
+
+      // Data to be emitted to sender and receiver
+      const messageData = {
+        senderHash,
+        receiverHash,
+      };
+
+      // Emit the message to the receiver's socket
+
+      if (receivingSocket) {
+        receivingSocket.emit("stoppedTyping", messageData);
+      }
+
+      if (userSocketMap.get(receiver._id.toString() + ":2")) {
+        userSocketMap
+          .get(receiver._id.toString() + ":2")
+          .emit("stoppedTyping", messageData);
+      }
+
+      // Emit the message to the sender's other device if exists
+      if (
+        userSocketMap.get(sender._id.toString() + ":2") &&
+        socket !== userSocketMap.get(sender._id.toString() + ":2")
+      ) {
+        userSocketMap
+          .get(sender._id.toString() + ":2")
+          .emit("typing", messageData);
+      } else if (sendingSocket !== socket) {
+        sendingSocket.emit("stoppedTyping", messageData);
       }
     } catch (error) {
       // Emit error message if any error occurs
