@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
-const cors = require("cors")
+const cors = require("cors");
 require("dotenv").config();
 const uri = process.env.MONGO_URI;
 const port = process.env.PORT || 3000;
@@ -36,11 +36,11 @@ const adminMerchantRoutes = require("./routes/adminRoutes/merchantsRoutes");
 
 const authenticateSocket = require("./middlewares/authenticateSocket");
 
-app.use(express.static("public"))
+app.use(express.static("public"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors())
-// io.use(authenticateSocket);
+app.use(cors());
+io.use(authenticateSocket);
 
 app.use("/api/v1/auth/user", userAuthRoutes);
 app.use("/api/v1/auth/merchant", merchantAuthRoutes);
@@ -59,34 +59,23 @@ const Chat = require("./models/chatModel");
 const Message = require("./models/messageModel");
 const authenticateChat = require("./middlewares/authenticateChat");
 
-// ===================== SOCKET.IO ZONE ==============================//
-
-const userSocketMap = new Map();
-
 io.on("connection", (socket) => {
-  socket.on("authenticateUser", async (data) => {
-    const id = await authenticateChat(data.token,data.role);
+  socket.on("conversation-opened", async ({ conversationId }) => {
+    socket.join(`conversation-${conversationId}`);
+    console.log(conversationId);
 
-    if (!id) {
-      return socket.emit("socketError", {
-        message: "You have an Invalid Token",
-      });
-    } else {
-      const socketExists = userSocketMap.get(id);
+    const userId = socket.decodedJwt._id;
 
-      socketExists
-        ? userSocketMap.set(id + ":2", socket)
-        : userSocketMap.set(id, socket);
-    }
+    await Message.updateMany(
+      { receiver: userId, seen: false, chat: conversationId },
+      { $set: { seen: true } }
+    );
   });
 
   // Listen for "newMessage" events
   socket.on("newMessage", async (data) => {
-    const { senderHash, receiverHash, message, role } = data;
-    let sendingSocket, receivingSocket;
-
+    const { role, senderHash, conversationId, message, receiverHash } = data;
     try {
-      // Find the sender and receiver based on the role
       const sender =
         role === "user"
           ? await User.findOne({ messaging_token: senderHash })
@@ -96,36 +85,10 @@ io.on("connection", (socket) => {
           ? await Merchant.findOne({ messaging_token: receiverHash })
           : await User.findOne({ messaging_token: receiverHash });
 
-      // Throw error if sender or receiver is not found
-      if (!sender || !receiver) {
-        throw new Error("Invalid sender or receiver hash");
-      }
-
-      // Get the sender's and receiver's sockets
-      sendingSocket = userSocketMap.get(sender._id.toString());
-      receivingSocket =
-        userSocketMap.get(receiver._id.toString()) ||
-        userSocketMap.get(receiver._id.toString() + ":2");
-
-      // Throw error if sender's  socket is not found
-      if (!sendingSocket) {
-        throw new Error("Unable to send message: socket not found");
-      }
-
-      // Check if users have chatted before
-      const usersHaveChat = await Chat.findOne({
+      const chat = await Chat.findOne({
         user: role === "user" ? sender._id : receiver._id,
         merchant: role === "merchant" ? sender._id : receiver._id,
       });
-
-      // Create a new chat if users have not chatted before
-      const chat = usersHaveChat
-        ? usersHaveChat
-        : await Chat.create({
-            user: role === "user" ? sender._id : receiver._id,
-            merchant: role === "merchant" ? sender._id : receiver._id,
-            lastMessageTime: new Date().toISOString(),
-          });
 
       // Create a new message
       const newMessage = await Message.create({
@@ -142,179 +105,39 @@ io.on("connection", (socket) => {
       chat.lastMessage = newMessage._id;
       await chat.save();
 
-      // Mark unread messages as seen
-      await Message.updateMany(
-        { receiver: sender._id, seen: false, chat: chat._id },
-        { $set: { seen: true } }
-      );
+      // Emit the message to the both sockets
 
-      // Data to be emitted to sender and receiver
-      const messageData = {
-        senderHash,
-        message,
-        receiverHash,
-        username: sender.username,
-        profilePicture: sender.profilePicture,
-        time: new Date().toISOString(),
-      };
-
-      // Emit the message to the receiver's socket
-
-      if (receivingSocket) {
-        receivingSocket.emit("newMessage", messageData);
-      }
-
-      // receivingSocket.emit("newMessage", messageData);
-
-      if (userSocketMap.get(receiver._id.toString() + ":2")) {
-        userSocketMap
-          .get(receiver._id.toString() + ":2")
-          .emit("newMessage", messageData);
-      }
-
-      // Emit the message to the sender's other device if exists
-      if (
-        userSocketMap.get(sender._id.toString() + ":2") &&
-        socket !== userSocketMap.get(sender._id.toString() + ":2")
-      ) {
-        userSocketMap
-          .get(sender._id.toString() + ":2")
-          .emit("newMessage", messageData);
-      } else if (sendingSocket !== socket) {
-        sendingSocket.emit("newMessage", messageData);
-      }
+      socket.broadcast
+        .to(`conversation-${conversationId}`)
+        .emit("newMessage", data);
     } catch (error) {
       // Emit error message if any error occurs
-      socket.emit("messageError", { message: error.message });
+      throw new Error(error);
     }
   });
-
-
+  // Listen for "typing" events
   socket.on("typing", async (data) => {
-    const { senderHash, receiverHash, role} = data;
-    let sendingSocket, receivingSocket;
-
+    const { conversationId } = data;
     try {
-      // Find the sender and receiver based on the role
-      const sender =
-        role === "user"
-          ? await User.findOne({ messaging_token: senderHash })
-          : await Merchant.findOne({ messaging_token: senderHash });
-      const receiver =
-        role === "user"
-          ? await Merchant.findOne({ messaging_token: receiverHash })
-          : await User.findOne({ messaging_token: receiverHash });
+      // Emit the message to the both sockets
 
-      // Throw error if sender or receiver is not found
-      if (!sender || !receiver) {
-        throw new Error("Invalid sender or receiver hash");
-      }
-
-      // Get the sender's and receiver's sockets
-      sendingSocket = userSocketMap.get(sender._id.toString());
-      receivingSocket =
-        userSocketMap.get(receiver._id.toString()) ||
-        userSocketMap.get(receiver._id.toString() + ":2");
-
-      // Throw error if sender's  socket is not found
-      if (!sendingSocket) {
-        throw new Error("Unable to send message: socket not found");
-      }
-
-      // Data to be emitted to sender and receiver
-      const messageData = {
-        senderHash,
-        receiverHash,
-      };
-
-      // Emit the message to the receiver's socket
-
-      if (receivingSocket) {
-        receivingSocket.emit("typing", messageData);
-      }
-
-      if (userSocketMap.get(receiver._id.toString() + ":2")) {
-        userSocketMap
-          .get(receiver._id.toString() + ":2")
-          .emit("typing", messageData);
-      }
-
-      // Emit the message to the sender's other device if exists
-      if (
-        userSocketMap.get(sender._id.toString() + ":2") &&
-        socket !== userSocketMap.get(sender._id.toString() + ":2")
-      ) {
-        userSocketMap
-          .get(sender._id.toString() + ":2")
-          .emit("typing", messageData);
-      } else if (sendingSocket !== socket) {
-        sendingSocket.emit("typing", messageData);
-      }
+      socket.broadcast
+        .to(`conversation-${conversationId}`)
+        .emit("typing", data);
     } catch (error) {
       // Emit error message if any error occurs
       socket.emit("messageError", { message: error.message });
     }
   });
+  // Listen for "typing" events
   socket.on("stoppedTyping", async (data) => {
-    const { senderHash, receiverHash, role} = data;
-    let sendingSocket, receivingSocket;
-
+    const { conversationId } = data;
     try {
-      // Find the sender and receiver based on the role
-      const sender =
-        role === "user"
-          ? await User.findOne({ messaging_token: senderHash })
-          : await Merchant.findOne({ messaging_token: senderHash });
-      const receiver =
-        role === "user"
-          ? await Merchant.findOne({ messaging_token: receiverHash })
-          : await User.findOne({ messaging_token: receiverHash });
+      // Emit the message to the both sockets
 
-      // Throw error if sender or receiver is not found
-      if (!sender || !receiver) {
-        throw new Error("Invalid sender or receiver hash");
-      }
-
-      // Get the sender's and receiver's sockets
-      sendingSocket = userSocketMap.get(sender._id.toString());
-      receivingSocket =
-        userSocketMap.get(receiver._id.toString()) ||
-        userSocketMap.get(receiver._id.toString() + ":2");
-
-      // Throw error if sender's  socket is not found
-      if (!sendingSocket) {
-        throw new Error("Unable to send message: socket not found");
-      }
-
-      // Data to be emitted to sender and receiver
-      const messageData = {
-        senderHash,
-        receiverHash,
-      };
-
-      // Emit the message to the receiver's socket
-
-      if (receivingSocket) {
-        receivingSocket.emit("stoppedTyping", messageData);
-      }
-
-      if (userSocketMap.get(receiver._id.toString() + ":2")) {
-        userSocketMap
-          .get(receiver._id.toString() + ":2")
-          .emit("stoppedTyping", messageData);
-      }
-
-      // Emit the message to the sender's other device if exists
-      if (
-        userSocketMap.get(sender._id.toString() + ":2") &&
-        socket !== userSocketMap.get(sender._id.toString() + ":2")
-      ) {
-        userSocketMap
-          .get(sender._id.toString() + ":2")
-          .emit("typing", messageData);
-      } else if (sendingSocket !== socket) {
-        sendingSocket.emit("stoppedTyping", messageData);
-      }
+      socket.broadcast
+        .to(`conversation-${conversationId}`)
+        .emit("stoppedTyping", data);
     } catch (error) {
       // Emit error message if any error occurs
       socket.emit("messageError", { message: error.message });
@@ -322,12 +145,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    // Remove the user ID mapping when a user disconnects
-    userSocketMap.forEach(async (value, key) => {
-      if (value === socket) {
-        userSocketMap.delete(key);
-      }
-    });
+    console.log("Socket Disconnected");
   });
 });
 

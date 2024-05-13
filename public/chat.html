@@ -105,8 +105,7 @@
       const urlparams = new URLSearchParams(location.search);
 
       const getChatMessages = async () => {
-
-        let role = localStorage.getItem("role")
+        let role = localStorage.getItem("role");
 
         const response = await fetch(
           `/api/v1/chat/get/messages_${role}?id=` + urlparams.get("id"),
@@ -136,7 +135,7 @@
         }
       };
 
-        getChatMessages();
+      getChatMessages();
 
       function saveCredentials() {
         const token = document.getElementById("token").value;
@@ -146,11 +145,18 @@
         alert("Credentials saved successfully!");
       }
 
-      const socket = io();
+      const socket = io({
+        auth: {
+          token: localStorage.getItem("token"),
+        },
+      });
 
       socket.on("connect", () => {
         console.log("Connected to server");
-        authenticateUser();
+      });
+
+      socket.emit("conversation-opened", {
+        conversationId: urlparams.get("id"),
       });
 
       socket.on("socketError", (error) => {
@@ -232,7 +238,8 @@
           senderHash: localStorage.getItem("hash"), // Replace with actual sender hash
           receiverHash: urlparams.get("hash"), // Replace with actual receiver hash
           chatId: urlparams.get("id"),
-          role: localStorage.getItem("role")
+          role: localStorage.getItem("role"),
+          conversationId: urlparams.get("id"),
         };
         socket.emit("typing", data);
 
@@ -267,6 +274,7 @@
             receiverHash: urlparams.get("hash"), // Replace with actual receiver hash
             message: message,
             role: localStorage.getItem("role"),
+            conversationId: urlparams.get("id"),
           };
           socket.emit("newMessage", data);
           messageInput.value = "";
