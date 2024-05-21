@@ -20,7 +20,6 @@ exports.getAllMerchants = async (request, response) => {
 exports.getSingleMerchant = async (request, response) => {
   const id = request.params.id;
   try {
-
     if (!mongoose.isValidObjectId(id)) {
       return response
         .status(400)
@@ -131,6 +130,78 @@ exports.reinstateMerchant = async (request, response) => {
     response.status(201).json({
       status: true,
       message: "Merchant Reinstated Sucessfully",
+    });
+  } catch (error) {
+    console.log(error);
+    response.status(400).json(internalServerError(error));
+  }
+};
+
+exports.approveMerchant = async (request, response) => {
+  const id = request.params.id;
+  try {
+    if (!mongoose.isValidObjectId(id)) {
+      return response
+        .status(400)
+        .json(
+          handleError(
+            400,
+            "Invalid Merchant Id ",
+            "the Merchant id sent by the client is invalid"
+          )
+        );
+    }
+
+    const merchant = await Merchant.findOneAndUpdate(
+      { _id: id },
+      { documentVerified: true },
+      { new: true }
+    );
+
+    await Activity.create({
+      admin: request.admin,
+      action: `Approved ${merchant.fullName}`,
+    });
+
+    response.status(201).json({
+      status: true,
+      message: "Merchant Approved Sucessfully",
+    });
+  } catch (error) {
+    console.log(error);
+    response.status(400).json(internalServerError(error));
+  }
+};
+
+exports.declineMerchant = async (request, response) => {
+  const id = request.params.id;
+  try {
+    if (!mongoose.isValidObjectId(id)) {
+      return response
+        .status(400)
+        .json(
+          handleError(
+            400,
+            "Invalid Merchant Id ",
+            "the Merchant id sent by the client is invalid"
+          )
+        );
+    }
+
+    const merchant = await Merchant.findOneAndUpdate(
+      { _id: id },
+      { documentVerified: false },
+      { new: true }
+    );
+
+    await Activity.create({
+      admin: request.admin,
+      action: `Reversed Approval for ${merchant.fullName}`,
+    });
+
+    response.status(201).json({
+      status: true,
+      message: "Merchant Approval Reversed Sucessfully",
     });
   } catch (error) {
     console.log(error);

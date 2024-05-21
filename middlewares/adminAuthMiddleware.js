@@ -14,6 +14,7 @@ const authenticateAdmin = async (request, response, next) => {
     try {
       const decoded = jwt.verify(token, jwtsecret);
       request.admin = decoded.id;
+      request.role = decoded.role;
 
       const admin = await Admin.findById(decoded.id);
 
@@ -28,7 +29,6 @@ const authenticateAdmin = async (request, response, next) => {
             )
           );
       }
-
 
       next();
     } catch (error) {

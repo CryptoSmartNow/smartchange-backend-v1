@@ -6,6 +6,7 @@ const generateUniqeHash = require("../utils/generateHash");
 const { handleError, internalServerError } = require("../utils/errorHandler");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const Activity = require("../models/activityModel");
 const jwtsecret = process.env.JWT_SECRET;
 
 const registerAdmin = async (request, response) => {
@@ -190,8 +191,28 @@ const createAdmin = async (request, response) => {
   }
 };
 
+const getActivitiesLog = async (request, response) => {
+  try {
+    if (request.role !== "admin") {
+      return response
+        .status(401)
+        .json({ status: false, message: "Only Super Admins can see Logs" });
+    }
+
+    const activities = await Activity.find()
+      .sort({ createdAt: -1 })
+      .populate("admin");
+
+    response.status(200).json({ status: true, activities });
+  } catch (error) {
+    console.log(error);
+    response.status(400).json(internalServerError(error));
+  }
+};
+
 module.exports = {
   registerAdmin,
   loginAdmin,
-  createAdmin
+  createAdmin,
+  getActivitiesLog,
 };

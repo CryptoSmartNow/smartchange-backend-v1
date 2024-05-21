@@ -108,7 +108,7 @@
         let role = localStorage.getItem("role");
 
         const response = await fetch(
-          `/api/v1/chat/get/messages_${role}?id=` + urlparams.get("id"),
+          `http://52.209.54.165/api/v1/chat/get/messages_${role}?id=` + urlparams.get("id"),
           {
             method: "GET",
             headers: {
@@ -145,7 +145,7 @@
         alert("Credentials saved successfully!");
       }
 
-      const socket = io({
+      const socket = io("http://52.209.54.165",{
         auth: {
           token: localStorage.getItem("token"),
         },
