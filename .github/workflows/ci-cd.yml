@@ -1,0 +1,63 @@
+name: Smart-Exchange-Deployment
+
+on:
+  push:
+    branches: [main, master]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  Deploy:
+    name: Deploy Changes to EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        name: Checkout code
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+
+      - name: SSH and Deploy
+        env:
+          PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          HOSTNAME: ${{ secrets.EC2_REMOTE_HOST }}
+          USER_NAME: ubuntu
+
+        run: |
+          echo "$PRIVATE_KEY" > private_key
+          chmod 600 private_key
+          ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${HOSTNAME} << 'EOF'
+            # Stop the smart service
+            sudo systemctl stop smart
+
+            # Navigate to the application directory
+            cd /home/ubuntu/app/smartchange-backend-v1
+
+            # Abort any ongoing merge processes
+            git merge --abort || true
+
+            # Reset the repository to a clean state
+            git reset --hard HEAD
+
+            # Pull the latest changes from the repository
+            git pull
+
+            # Install Node.js 20.x
+            curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+
+            # Verify Node.js version
+            node --version
+
+            # Install dependencies
+            npm install
+
+            # Restart the smart service
+            sudo systemctl restart smart
+          EOF
+            rm private_key
