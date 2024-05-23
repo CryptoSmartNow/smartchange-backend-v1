@@ -210,9 +210,23 @@ const getActivitiesLog = async (request, response) => {
   }
 };
 
+const getAllSubAdmins = async (request, response) => {
+  try {
+    const admins = await Admin.find({ role: "moderator" }).sort({
+      createdAt: -1,
+    });
+
+    response.status(200).json({ status: true, admins });
+  } catch (error) {
+    console.log(error);
+    response.status(400).json(internalServerError(error));
+  }
+};
+
 module.exports = {
   registerAdmin,
   loginAdmin,
   createAdmin,
   getActivitiesLog,
+  getAllSubAdmins,
 };
