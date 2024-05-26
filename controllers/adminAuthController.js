@@ -119,14 +119,11 @@ const loginAdmin = async (request, response) => {
 
     //generate a token for the admin to authenticate requests
 
-    const token = jwt.sign(
-      { id: admin._id, role: admin.role, admin },
-      jwtsecret
-    );
+    const token = jwt.sign({ id: admin._id, role: admin.role }, jwtsecret);
 
     response
       .status(200)
-      .json({ status: true, message: "Login Successful", token });
+      .json({ status: true, message: "Login Successful", token, admin });
   } catch (error) {
     console.log(error);
     response.status(500).json(internalServerError(error));
@@ -217,12 +214,10 @@ const getActivitiesLog = async (request, response) => {
 const getAllSubAdmins = async (request, response) => {
   try {
     if (request.role !== "admin") {
-      return response
-        .status(401)
-        .json({
-          status: false,
-          message: "Only Super Admins can see Moderators",
-        });
+      return response.status(401).json({
+        status: false,
+        message: "Only Super Admins can see Moderators",
+      });
     }
 
     const admins = await Admin.find({ role: "moderator" }).sort({
