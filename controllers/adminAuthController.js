@@ -119,7 +119,10 @@ const loginAdmin = async (request, response) => {
 
     //generate a token for the admin to authenticate requests
 
-    const token = jwt.sign({ id: admin._id, role: admin.role }, jwtsecret);
+    const token = jwt.sign(
+      { id: admin._id, role: admin.role, admin },
+      jwtsecret
+    );
 
     response
       .status(200)
@@ -174,6 +177,7 @@ const createAdmin = async (request, response) => {
       fullName,
       email: email.toLowerCase(),
       password: passwordHash,
+      role: "moderator",
     });
 
     //sign a jwt token for the admin, so the admin can be logged in immediately after the signup process
@@ -212,6 +216,15 @@ const getActivitiesLog = async (request, response) => {
 
 const getAllSubAdmins = async (request, response) => {
   try {
+    if (request.role !== "admin") {
+      return response
+        .status(401)
+        .json({
+          status: false,
+          message: "Only Super Admins can see Moderators",
+        });
+    }
+
     const admins = await Admin.find({ role: "moderator" }).sort({
       createdAt: -1,
     });
