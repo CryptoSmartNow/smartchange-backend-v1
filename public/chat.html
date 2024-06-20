@@ -79,21 +79,21 @@
       </div>
     </div>
 
-    <!-- <div class="container">
+    <div class="container">
       <div class="input-group">
         <label for="token">Token:</label>
         <input
-          value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2M2ExNWJmZTIwOWQxZGFmZmM5ODljOCIsImlhdCI6MTcxNTA4MjY4N30.U128tJ7QrMe-tEZRQbrTX-Ctqb9CuT5QIETYPwf8e7Y"
+          value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2NmQ5N2Y0NmEyYTRlOGUyYmVhNzk4ZCIsImlhdCI6MTcxODQ1ODM1Nn0.aWw1gnowa28_65YWs4orG5sv0UI4sFC9k1c1JqabMRc"
           type="text"
           id="token"
         />
       </div>
       <div class="input-group">
         <label for="hash">Hash:</label>
-        <input value="a7db40decd" type="text" id="hash" />
+        <input value="dbc2e3ef2a" type="text" id="hash" />
       </div>
       <button onclick="saveCredentials()">Save Credentials</button>
-    </div> -->
+    </div>
 
     <script src="./socket-io.js"></script>
     <script>
@@ -153,6 +153,9 @@
 
       socket.on("connect", () => {
         console.log("Connected to server");
+      });
+      socket.on("connect_error", (err) => {
+        console.log("Error",err);
       });
 
       socket.emit("conversation-opened", {

@@ -3,18 +3,7 @@ const Schema = mongoose.Schema;
 
 const mediaSchema = new Schema(
   {
-    title: {
-      type: String,
-      required: true,
-    },
-    description: {
-      type: String,
-      required: true,
-    },
-    previewUrl: String,
-    duration: {
-      type: String,
-    },
+    title: String,
     mediaUrl: {
       type: String,
       required: true,

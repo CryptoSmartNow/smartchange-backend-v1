@@ -177,7 +177,7 @@ const login = async (request, response) => {
 
     response
       .status(200)
-      .json({ status: true, message: "Login Successful", token });
+      .json({ status: true, message: "Login Successful", token, user });
   } catch (error) {
     console.log(error);
     response.status(500).json(internalServerError(error));

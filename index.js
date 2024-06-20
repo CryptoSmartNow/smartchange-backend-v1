@@ -33,6 +33,7 @@ const reviewRoutes = require("./routes/review.router");
 const adminAuthRoutes = require("./routes/adminRoutes/adminAuthRoutes");
 const adminUserManagementRoutes = require("./routes/adminRoutes/usersRouter");
 const adminMerchantRoutes = require("./routes/adminRoutes/merchantsRoutes");
+const mediaRoutes = require("./routes/adminRoutes/mediaRoutes");
 
 const authenticateSocket = require("./middlewares/authenticateSocket");
 
@@ -51,6 +52,11 @@ app.use("/api/v1/review", reviewRoutes);
 app.use("/api/v1/admin/auth", adminAuthRoutes);
 app.use("/api/v1/admin/user_management", adminUserManagementRoutes);
 app.use("/api/v1/admin/merchant_management", adminMerchantRoutes);
+app.use("/api/v1/admin/media", mediaRoutes);
+
+app.get("/test", (req, res) => {
+  res.status(200).json({ message: "Okay" });
+});
 
 // Messaging Related Models
 const User = require("./models/userModel");
