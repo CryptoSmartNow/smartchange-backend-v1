@@ -34,6 +34,7 @@ const adminAuthRoutes = require("./routes/adminRoutes/adminAuthRoutes");
 const adminUserManagementRoutes = require("./routes/adminRoutes/usersRouter");
 const adminMerchantRoutes = require("./routes/adminRoutes/merchantsRoutes");
 const mediaRoutes = require("./routes/adminRoutes/mediaRoutes");
+const transactionRoutes = require("./routes/transactions.router");
 
 const authenticateSocket = require("./middlewares/authenticateSocket");
 
@@ -53,6 +54,7 @@ app.use("/api/v1/admin/auth", adminAuthRoutes);
 app.use("/api/v1/admin/user_management", adminUserManagementRoutes);
 app.use("/api/v1/admin/merchant_management", adminMerchantRoutes);
 app.use("/api/v1/admin/media", mediaRoutes);
+app.use("/api/v1/transactions", transactionRoutes);
 
 app.get("/test", (req, res) => {
   res.status(200).json({ message: "Okay" });

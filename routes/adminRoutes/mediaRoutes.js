@@ -7,6 +7,6 @@ const {
 const router = express.Router();
 
 router.post("/upload", authenticateAdmin, uploadMedia);
-router.post("/get/all", authenticateAdmin, getAllMedia);
+router.get("/get/all", getAllMedia);
 
 module.exports = router;

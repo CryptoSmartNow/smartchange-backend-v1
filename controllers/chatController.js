@@ -32,7 +32,7 @@ const getChatsForUser = async (request, response) => {
 // Get Chats for the Logged in merchant
 
 const getChatsForMerchant = async (request, response) => {
-  const id = request.user;
+  const id = request.merchant;
 
   try {
     // find all chats related to the logged in merchant and populate

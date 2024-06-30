@@ -1,6 +1,7 @@
 const { default: mongoose } = require("mongoose");
 const Merchant = require("../models/merchantModel");
 const { internalServerError, handleError } = require("../utils/errorHandler");
+const Media = require("../models/mediaModel");
 
 const getAllMerchantsForSell = async (request, response) => {
   try {
@@ -67,8 +68,24 @@ const getMerchantProfile = async (request, response) => {
   }
 };
 
+const searchForMedia = async (request, response) => {
+  const searchTerm = request.query.search;
+
+  try {
+    const result = await Media.find({
+      title: { $regex: searchTerm, $options: "i" },
+    }).sort({ createdAt: -1 });
+
+    response.status(200).json({ status: true, result });
+  } catch (error) {
+    console.log(error);
+    response.status(500).json(internalServerError(error));
+  }
+};
+
 module.exports = {
   getAllMerchantsForSell,
   getMerchantsForBuy,
   getMerchantProfile,
+  searchForMedia,
 };

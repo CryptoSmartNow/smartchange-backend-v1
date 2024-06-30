@@ -368,37 +368,10 @@ const setActiveStatus = async (request, response) => {
   const { status } = request.body;
 
   try {
-    //check if the required fields are being sent
-
-    if (!status) {
-      return response
-        .status(400)
-        .json(
-          handleError(
-            400,
-            "Status is Required",
-            "the client did not send 'status' in the request body"
-          )
-        );
-    }
-
-    //check if the status being sent is in the right format
-
-    if (typeof status !== "boolean") {
-      return response
-        .status(400)
-        .json(
-          handleError(
-            400,
-            "Invalid Status Type",
-            "status should be type of boolean, either 'true' or 'false'"
-          )
-        );
-    }
 
     // find the logged in user and update active status
 
-    await Merchant.findOneAndUpdate({ _id: id }, { active: status });
+    await Merchant.findOneAndUpdate({ _id: id }, { active: Boolean(status) });
 
     response
       .status(200)
@@ -503,9 +476,16 @@ const addSellingRate = async (request, response) => {
   }
 };
 
-const getMerchantProfile = async (request, response) => {
+const getLoggedInMerchant = async (request, response) => {
+  const id = request.merchant;
   try {
-  } catch (error) {}
+    const merchant = await Merchant.findById(id);
+
+    response.status(200).json({ status: true, merchant });
+  } catch (error) {
+    console.log(error);
+    response.status(500).json(internalServerError(error));
+  }
 };
 module.exports = {
   signUpMerchant,
@@ -517,4 +497,5 @@ module.exports = {
   setActiveStatus,
   addBuyingRate,
   addSellingRate,
+  getLoggedInMerchant,
 };
